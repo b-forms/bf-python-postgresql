@@ -13,6 +13,9 @@ class TestFormData(unittest.TestCase):
         fields = form.fields({'project_id', 'account_id', 'project_code'})
         self.assertEqual(data, fields)
 
+        fields = form.fields({'project_id'})
+        self.assertEqual({'project_id': '5'}, fields)
+
 
 if __name__ == '__main__':
     unittest.main()
