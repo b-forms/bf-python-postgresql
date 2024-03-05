@@ -35,24 +35,25 @@ class Validator:
                 continue # Does not apply to this index.
 
             # Look for duplicates.
+            args = []
             where = []
             for unique_column in indexdef:
                 if unique_column not in form:
                     return # Cannot search for duplicates if field is missing.
                     # TODO is this the best way to handle this condition?
 
-                where.append(sql.SQL('{column_name} = {field}').format(
-                                      column_name=sql.Identifier(column_name),
-                                      field=form[unique_column]))
+                where.append(sql.SQL('{} = %s').format(
+                                      sql.Identifier(column_name)))
+                args.append(form[unique_column])
 
             # Exclude existing record from duplicate search if the primary key
             # is in the form data. This will allow editing of a record to exclude
             # duplicate matches against itself.
             if (type(primary_key) is str):
                 if primary_key in form:
-                    where.append(sql.SQL('{primary_key} != {field}').format(
-                                         primary_key=sql.Identifier(primary_key),
-                                         field=form[primary_key]))
+                    where.append(sql.SQL('{} != %s').format(
+                                         sql.Identifier(primary_key)))
+                    args.append(form[primary_key])
             else:
                 pass # TODO handle composite primary keys.
 
@@ -65,7 +66,7 @@ class Validator:
             query = sql.SQL(query).format(
                     table_name=sql.Identifier(self.table_name),
                     where=sql.SQL(' and ').join(where))
-            cur.execute(query)
+            cur.execute(query, args)
 
             if (cur.fetchone()['count']):
                 return 'Duplicate constraint. Field must be unique.'
