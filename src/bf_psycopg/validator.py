@@ -33,20 +33,11 @@ class Where:
             return sql.SQL('true').format()
 
         return sql.SQL('{params}').format(
-            params=sql.SQL(f' {self.op()} ').join(self.params))
+            params=sql.SQL(f' and ').join(self.params))
 
 
     def as_string(self, context):
         return self.clause().as_string(context)
-
-
-    def op(self):
-        return 'and'
-
-
-class WhereOr:
-    def op(self):
-        return 'or'
 
 
 class Validator:
