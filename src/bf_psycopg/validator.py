@@ -1,44 +1,8 @@
 import re
-#import validators
 from psycopg.rows import dict_row
 from psycopg import sql
 from . import TableInfo
 from . import FormData
-
-# from app.tables import Schema     TODO remove
-# import psyqlepg                   TODO remove
-
-
-class Where:
-    # TODO Remove or replace this?
-    def __init__(self, name=None, value=None):
-        self.params = []
-        self.args = []
-        if (name):
-            self.append(name, value)
-
-
-    def append(self, name, value=None):
-
-        if isinstance(name, sql.Composable):
-            self.params.append(name)
-        else:
-            self.params.append(sql.SQL('{} = %s').format(sql.Identifier(name)))
-            self.args.append(value)
-        return self
-
-
-    def clause(self):
-        if not self.params:
-            return sql.SQL('true').format()
-
-        return sql.SQL('{params}').format(
-            params=sql.SQL(f' and ').join(self.params))
-
-
-    def as_string(self, context):
-        return self.clause().as_string(context)
-
 
 class Validator:
     def __init__(self, conn, table_name):
@@ -71,20 +35,26 @@ class Validator:
                 continue # Does not apply to this index.
 
             # Look for duplicates.
-            where = Where()
-            for column_name in indexdef:
-                field = form[column_name]
-                if field is None:
+            where = []
+            for unique_column in indexdef:
+                if unique_column not in form:
                     return # Cannot search for duplicates if field is missing.
-                where.append(column_name, field)
+                    # TODO is this the best way to handle this condition?
+
+                where.append(sql.SQL('{column_name} = {field}').format(
+                                      column_name=sql.Identifier(column_name),
+                                      field=form[unique_column]))
 
             # Exclude existing record from duplicate search if the primary key
             # is in the form data. This will allow editing of a record to exclude
             # duplicate matches against itself.
             if (type(primary_key) is str):
                 if primary_key in form:
-                    pk_field = form[primary_key]
-                    # TODO need where clause to exclude (!=)
+                    where.append(sql.SQL('{primary_key} != {field}').format(
+                                         primary_key=sql.Identifier(primary_key),
+                                         field=form[primary_key]))
+            else:
+                pass # TODO handle composite primary keys.
 
             # Search.
             query = '''
@@ -94,7 +64,8 @@ class Validator:
             '''
             query = sql.SQL(query).format(
                     table_name=sql.Identifier(self.table_name),
-                    where=where.clause())
-            cur.execute(query, where.args)
+                    where=sql.SQL(' and ').join(where))
+            cur.execute(query)
+
             if (cur.fetchone()['count']):
                 return 'Duplicate constraint. Field must be unique.'

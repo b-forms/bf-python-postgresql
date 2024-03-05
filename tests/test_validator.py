@@ -16,9 +16,12 @@ class TestValidator(unittest.TestCase):
                 max_users int not null default 0,
                 constraint name_unique unique (account_name)
             );
-            insert into accounts (account_name)
-            values ('ACME Limited');
             ''')
+            account = conn.execute('''
+            insert into accounts (account_name)
+            values ('ACME Limited')
+            returning *;
+            ''').fetchone()
 
             form = {
                 'account_name': 'ACME Limited',
@@ -28,6 +31,12 @@ class TestValidator(unittest.TestCase):
             self.assertEqual(
                     'Duplicate constraint. Field must be unique.',
                     validator.validate_field(form, 'account_name'))
+
+            # Test exclusion.
+            form['account_id'] = account['account_id']
+            validator = Validator(conn, 'accounts')
+            validator.validate_field(form, 'account_name')
+            self.assertIsNone(validator.validate_field(form, 'account_name'))
 
 
 if __name__ == '__main__':
