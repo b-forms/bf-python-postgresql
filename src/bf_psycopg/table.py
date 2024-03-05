@@ -10,8 +10,29 @@ class TableInfo:
         self.table_name = table_name
 
 
-    def primary_key():
-        pass
+    def primary_key(self, conn):
+        '''
+        Retreive the primary key. This is either a string, or a tuple
+        if the primary key is a composite key.
+        '''
+
+        cur = conn.cursor()
+        cur.row_factory = namedtuple_row
+
+        # https://wiki.postgresql.org/wiki/Retrieve_primary_key_columns
+        query = '''
+            SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
+            FROM   pg_index i
+            JOIN   pg_attribute a ON a.attrelid = i.indrelid
+                    AND a.attnum = ANY(i.indkey)
+            WHERE  i.indrelid = %s::regclass
+            AND    i.indisprimary;
+        '''
+        cur.execute(query, [self.table_name])
+
+        # TODO composite primary keys.
+        att = cur.fetchone()
+        return att.attname
 
 
     def unique_indices(self, conn):

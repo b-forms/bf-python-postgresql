@@ -24,6 +24,7 @@ class TestTableInfo(unittest.TestCase):
                 ('composite_a', 'composite_b'),
                 ('id', ),
             ], unique_indices)
+            self.assertEqual('id', info.primary_key(conn))
 
 
 if __name__ == '__main__':
