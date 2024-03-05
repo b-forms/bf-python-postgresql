@@ -93,7 +93,7 @@ class Validator:
             if (type(primary_key) is str):
                 if primary_key in form:
                     pk_field = form[primary_key]
-                    where.append(primary_key, pk_field)
+                    # TODO need where clause to exclude (!=)
 
             # Search.
             query = '''
