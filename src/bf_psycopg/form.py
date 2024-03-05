@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 
 
@@ -23,6 +24,26 @@ class FormData:
     def __post_init__(self):
         if self.data is None:
             self.data = {}
+
+
+    def row(self, field_name):
+        '''
+        Resolve a field name to a column name and its row.
+
+        For form-records:
+
+            'field_name' will resolve to:
+
+                ('field_name', None)
+
+        For form-tables:
+
+            'field_name[123]' will resolve to:
+
+                ('field_name', '123')
+        '''
+        m = re.match(r'(\w+)(\[(\w+)\])?', field_name)
+        return (m.group(1), m.group(3))
 
 
     def fields(self, accept):
