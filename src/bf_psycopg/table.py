@@ -21,18 +21,22 @@ class TableInfo:
 
         # https://wiki.postgresql.org/wiki/Retrieve_primary_key_columns
         query = '''
-            SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type
-            FROM   pg_index i
-            JOIN   pg_attribute a ON a.attrelid = i.indrelid
-                    AND a.attnum = ANY(i.indkey)
-            WHERE  i.indrelid = %s::regclass
-            AND    i.indisprimary;
+            select json_agg(a.attname) as attname
+            from pg_index i
+            join pg_attribute a on (a.attrelid = i.indrelid and a.attnum = any(i.indkey))
+            where i.indrelid = %s::regclass
+                and i.indisprimary
+            group by i.indexrelid;
         '''
         cur.execute(query, [self.table_name])
 
         # TODO composite primary keys.
         att = cur.fetchone()
-        return att.attname
+        if not att.attname:
+            return None
+        if len(att.attname) == 1:
+            return att.attname[0]
+        return tuple(att.attname)
 
 
     def unique_indices(self, conn):
