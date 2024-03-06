@@ -28,7 +28,7 @@ class FormData:
 
     def row(self, field_name):
         '''
-        Resolve a field name to a column name and its row.
+        Resolve a field name to a column name and its row index.
 
         For form-records:
 
@@ -42,8 +42,11 @@ class FormData:
 
                 ('field_name', '123')
         '''
-        m = re.match(r'(\w+)(\[(\w+)\])?', field_name)
-        return (m.group(1), m.group(3))
+        m = re.match(r'(\w+)(\[(\d+)\])?', field_name)
+        i = m.group(3)
+        if i is not None:
+            i = int(i)
+        return m.group(1), i
 
 
     def fields(self, accept):
@@ -56,3 +59,30 @@ class FormData:
         form = {k: form[k].strip() for k in form.keys() & accept}
 
         return form
+
+
+    def rows(self, accept):
+        rows = {}
+        fields = {}
+
+        # Get rows.
+        for field_name in self.data:
+            column_name, i = self.row(field_name)
+            if column_name not in accept:
+                continue
+
+            field = self.data[field_name].strip()
+
+            if i is not None:
+                if i not in rows:
+                    rows[i] = {}
+                rows[i][column_name] = field
+            else:
+                fields[column_name] = field
+        
+        # Flatten.
+        for column_name in fields:
+            for i in rows:
+                rows[i][column_name] = fields[column_name]
+
+        return rows
