@@ -7,7 +7,7 @@ class FormData:
     '''
     Class for handling HTTP form data.
 
-    Will only return fields that are acceptabled.
+    Will only return fields that are acceptable.
 
     Will convert field names ending in '[i]' into multidimensional dicts,
     where i is an integer.
@@ -40,7 +40,7 @@ class FormData:
 
             'field_name[123]' will resolve to:
 
-                ('field_name', '123')
+                ('field_name', 123)
         '''
         m = re.match(r'(\w+)(\[(\d+)\])?', field_name)
         i = m.group(3)
