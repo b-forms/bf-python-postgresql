@@ -23,9 +23,9 @@ class TestFormData(unittest.TestCase):
             'project_id[0]': '52',
             'account_id[0]': '30',
             'project_id[1]': '45',
-            'account_id[1]': '20',
+            'account_id[1]': ' 20 ',
             'exclude_me[4]': '80',
-            'group_id': '500', # Flatten this field.
+            'group_id': ' 500 ', # Flatten this field.
             'ignored_field': 'ignore_me',
         }
         form = FormData(data)
